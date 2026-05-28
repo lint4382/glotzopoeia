@@ -1,74 +1,78 @@
 <script lang="ts">
     import { MoonIcon, SunIcon } from "@lucide/svelte";
-    import "../styles/index.css";
-    import Gloss, { type GlossData } from "../Gloss.svelte";
-    import type { Block } from "../BlockView.svelte";
-    import Editor from "../Editor.svelte";
-    import CreateBlockMenu from "../CreateBlockMenu.svelte";
-    import Overlays from "../Overlays.svelte";
-    import { invoke } from "@tauri-apps/api/core";
-    import { onMount } from "svelte";
+    import "$lib/style.css";
+    import { Document, getDocument, setDocument } from "../lib/document.svelte";
+    import BlocksView from "$lib/BlocksView.svelte";
 
     let darkMode = $state(true);
 
-    let data: Block[] = $state([
-        {
-            id: "test",
-            data: {
-                type: "Gloss",
-                value: {
-                    cols: [
-                        {
-                            id: "source",
-                            name: "Source",
-                            content: {
-                                type: "FreeForm",
-                                value: "Pra ka vajni.",
-                            },
-                        },
-                        {
-                            id: "words",
-                            name: "Words",
-                            content: {
-                                type: "Rows",
-                                value: ["pra", "ka", "vajni"],
-                            },
-                        },
-                        {
-                            id: "gloss",
-                            name: "Gloss",
-                            content: {
-                                type: "Rows",
-                                value: ["horse", "NOM", "go"],
-                            },
-                        },
-                        {
-                            id: "translation",
-                            name: "Translation",
-                            content: {
-                                type: "FreeForm",
-                                value: "The horse goes.",
-                            },
-                        },
-                    ],
+    setDocument(
+        new Document("root", {
+            root: {
+                data: {
+                    tag: "Opaque",
+                    value: undefined,
                 },
+                children: ["ul"],
             },
-        },
-    ]);
+            ul: {
+                data: {
+                    tag: "List",
+                    value: {
+                        style: "Bullet",
+                    },
+                },
+                children: ["li1", "li2"],
+            },
+            li1: {
+                data: {
+                    tag: "Opaque",
+                    value: undefined,
+                },
+                children: ["a"],
+            },
+            a: {
+                data: {
+                    tag: "Text",
+                    value: {
+                        content: "Foo",
+                        style: "P",
+                    },
+                },
+                children: [],
+            },
+            li2: {
+                data: {
+                    tag: "Opaque",
+                    value: undefined,
+                },
+                children: ["b"],
+            },
+            b: {
+                data: {
+                    tag: "Text",
+                    value: {
+                        content: "Bar",
+                        style: "P",
+                    },
+                },
+                children: [],
+            },
+        }),
+    );
+    let doc = $derived(getDocument());
+
+    function onKeyDown(e: KeyboardEvent) {
+        doc.handleKeyDown(e);
+    }
 </script>
+
+<svelte:window onkeydown={onKeyDown} />
 
 <div
     class="bg-nord6 dark:bg-nord0 text-nord0 dark:text-nord6 relative h-screen w-screen p-6 pt-16"
     data-theme={darkMode ? "dark" : undefined}
 >
-    <button
-        onclick={() => {
-            invoke("save", { data })
-                .then((x) => console.error(x))
-                .catch((x) => console.error(x));
-        }}>Save</button
-    >
-
     <button
         class="absolute top-0 right-0 p-2"
         onclick={() => {
@@ -82,10 +86,5 @@
         {/if}
     </button>
 
-    <Editor bind:data />
-
-    <Overlays />
+    <BlocksView id={doc.root} />
 </div>
-
-<style>
-</style>
