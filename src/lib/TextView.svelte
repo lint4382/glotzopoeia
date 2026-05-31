@@ -10,17 +10,22 @@
     let { id }: { id: BlockId } = $props();
     let doc = $derived(getDocument());
     let block = $derived(doc.getBlock(id, "Text"));
+    let textRender = $state<TextRender | undefined>(undefined);
 
     function onClick(e: MouseEvent) {
-        const caretPosition = document.caretPositionFromPoint(
+        const caretPosition = document.caretRangeFromPoint(
             e.clientX,
             e.clientY,
         );
-        if (caretPosition === null) return;
-        doc.edit = { id, initialPosition: caretPosition.offset };
+        if (caretPosition === null || textRender === undefined) return;
+        doc.edit = {
+            id,
+            initialPosition: textRender.getPosition(
+                caretPosition.startContainer,
+                caretPosition.startOffset,
+            ),
+        };
     }
-
-    const renderedContent = $derived.by(() => {});
 </script>
 
 {#if doc.edit && doc.edit.id === id}
@@ -41,6 +46,6 @@
         class:h6={block.data.value.style === "H6"}
         onclick={onClick}
     >
-        <TextRender source={block.data.value.content} />
+        <TextRender source={block.data.value.content} bind:this={textRender} />
     </div>
 {/if}
